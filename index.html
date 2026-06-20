@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Certificate Verification — FDP</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0f2044; --gold: #c9a84c; --teal: #1a6b78;
+    --teal-light: #e6f4f6; --green: #1a7a4a;
+    --gray: #6b7280; --border: #e5e7eb;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f2044 0%, #1a3060 100%);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .container { width: 100%; max-width: 560px; }
+
+  .logo-bar {
+    text-align: center; margin-bottom: 24px;
+  }
+  .logo-bar .icon {
+    font-size: 40px; margin-bottom: 8px;
+  }
+  .logo-bar h1 {
+    font-size: 22px; font-weight: 700; color: white;
+  }
+  .logo-bar p {
+    font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px;
+  }
+
+  .card {
+    background: white; border-radius: 20px;
+    padding: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+
+  /* Search box */
+  .search-box { margin-bottom: 24px; }
+  .search-box label {
+    font-size: 13px; font-weight: 600; color: var(--gray);
+    display: block; margin-bottom: 8px;
+  }
+  .input-row { display: flex; gap: 10px; }
+  .input-row input {
+    flex: 1; padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px; font-size: 13px;
+    font-family: monospace; outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-row input:focus { border-color: var(--teal); }
+  .btn-verify {
+    padding: 12px 20px; background: var(--navy);
+    color: white; border: none; border-radius: 12px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-verify:hover { background: #1a3060; transform: translateY(-1px); }
+
+  .divider {
+    text-align: center; margin: 20px 0;
+    font-size: 12px; color: var(--gray);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Result */
+  .result { display: none; }
+
+  .result-valid {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 2px solid #86efac;
+    border-radius: 16px; padding: 24px;
+    margin-bottom: 20px;
+  }
+  .result-invalid {
+    background: #fef2f2; border: 2px solid #fca5a5;
+    border-radius: 16px; padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .result-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 20px;
+  }
+  .result-icon {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+  }
+  .icon-valid { background: #bbf7d0; }
+  .icon-invalid { background: #fecaca; }
+  .result-title { font-size: 18px; font-weight: 700; }
+  .title-valid { color: #15803d; }
+  .title-invalid { color: #991b1b; }
+  .result-subtitle { font-size: 13px; color: var(--gray); margin-top: 2px; }
+
+  .cert-details { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .detail-item { background: white; border-radius: 10px; padding: 12px 14px; }
+  .detail-label { font-size: 11px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .detail-value { font-size: 14px; font-weight: 600; color: var(--navy); }
+
+  .blockchain-info {
+    background: #0f2044; border-radius: 12px;
+    padding: 16px; margin-top: 16px;
+    font-family: monospace; font-size: 11px;
+    color: #4ade80; line-height: 1.8;
+  }
+  .blockchain-info span { color: #fbbf24; }
+
+  .loading {
+    text-align: center; padding: 32px;
+    display: none;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .how-it-works {
+    margin-top: 24px;
+    background: var(--teal-light);
+    border-radius: 12px; padding: 16px;
+  }
+  .how-it-works h3 {
+    font-size: 13px; font-weight: 600;
+    color: var(--teal); margin-bottom: 10px;
+  }
+  .how-it-works p {
+    font-size: 12px; color: var(--teal);
+    line-height: 1.8;
+  }
+
+  .footer {
+    text-align: center; margin-top: 20px;
+    font-size: 12px; color: rgba(255,255,255,0.4);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo-bar">
+    <div class="icon">🎓</div>
+    <h1>Certificate Verification</h1>
+    <p>Blockchain-powered authenticity check</p>
+  </div>
+
+  <div class="card">
+    <div class="search-box">
+      <label>Enter Certificate Hash</label>
+      <div class="input-row">
+        <input type="text" id="hash-input"
+          placeholder="Paste certificate hash here…"/>
+        <button class="btn-verify" onclick="verifyCert()">🔍 Verify</button>
+      </div>
+    </div>
+
+    <div class="divider">or scan QR code on certificate</div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p style="font-size:14px;color:var(--gray)">Checking blockchain…</p>
+    </div>
+
+    <!-- Result -->
+    <div class="result" id="result">
+
+      <!-- Valid -->
+      <div id="result-valid" style="display:none">
+        <div class="result-valid">
+          <div class="result-header">
+            <div class="result-icon icon-valid">✅</div>
+            <div>
+              <div class="result-title title-valid">Certificate Verified</div>
+              <div class="result-subtitle">This certificate is authentic and blockchain-verified</div>
+            </div>
+          </div>
+          <div class="cert-details">
+            <div class="detail-item">
+              <div class="detail-label">Recipient</div>
+              <div class="detail-value" id="d-name">—</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Program</div>
+              <div class="detail-value" id="d-program">—</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Duration</div>
+              <div class="detail-value" id="d-duration">—</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Issued By</div>
+              <div class="detail-value" id="d-issuer">—</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Issued At</div>
+              <div class="detail-value" id="d-date">—</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Blockchain</div>
+              <div class="detail-value" style="color:var(--teal)">Polygon Amoy ✓</div>
+            </div>
+          </div>
+          <div class="blockchain-info">
+            <div><span>txHash:</span> <span id="d-txhash">—</span></div>
+            <div><span>status:</span> VERIFIED ✓</div>
+            <div><span>network:</span> Polygon Amoy Testnet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invalid -->
+      <div id="result-invalid" style="display:none">
+        <div class="result-invalid">
+          <div class="result-header">
+            <div class="result-icon icon-invalid">❌</div>
+            <div>
+              <div class="result-title title-invalid">Certificate Not Found</div>
+              <div class="result-subtitle">This certificate could not be verified</div>
+            </div>
+          </div>
+          <p style="font-size:13px;color:#991b1b;line-height:1.7">
+            The hash you entered does not match any issued certificate in our blockchain ledger.
+            This certificate may be <strong>forged</strong>, <strong>tampered</strong>, or simply
+            <strong>not yet issued</strong>.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="how-it-works">
+      <h3>🔐 How Blockchain Verification Works</h3>
+      <p>
+        Each certificate has a unique SHA-256 hash stored permanently on the Polygon blockchain.
+        The QR code on your certificate encodes this hash.
+        Scanning it brings you here and verifies authenticity instantly — no central authority needed.
+      </p>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered by Polygon Blockchain · Certificates cannot be forged or tampered
+  </div>
+</div>
+
+<script>
+  const API = "https://fdp-certificates-api.onrender.com";
+
+  // Auto-read hash from URL if QR code was scanned
+  window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    const hash = params.get("hash");
+    if (hash) {
+      document.getElementById("hash-input").value = hash;
+      verifyCert();
+    }
+  };
+
+  async function verifyCert() {
+    const hash = document.getElementById("hash-input").value.trim();
+    if (!hash) { alert("Please enter a certificate hash"); return; }
+
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("result").style.display = "none";
+
+    try {
+      const res = await fetch(`${API}/verify/${hash}`);
+      const data = await res.json();
+
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("result").style.display = "block";
+
+      if (data.valid) {
+        document.getElementById("result-valid").style.display = "block";
+        document.getElementById("result-invalid").style.display = "none";
+        document.getElementById("d-name").textContent = data.name || "—";
+        document.getElementById("d-program").textContent = data.program || "—";
+        document.getElementById("d-duration").textContent = data.duration || "—";
+        document.getElementById("d-issuer").textContent = data.issued_by || "—";
+        document.getElementById("d-date").textContent = data.issued_at
+          ? new Date(data.issued_at).toLocaleDateString("en-IN", {
+              day: "numeric", month: "long", year: "numeric"
+            })
+          : "—";
+        document.getElementById("d-txhash").textContent =
+          (data.tx_hash || "—").substring(0, 30) + "…";
+      } else {
+        document.getElementById("result-valid").style.display = "none";
+        document.getElementById("result-invalid").style.display = "block";
+      }
+    } catch (e) {
+      document.getElementById("loading").style.display = "none";
+      alert("Error connecting to verification server: " + e.message);
+    }
+  }
+</script>
+</body>
+</html>
